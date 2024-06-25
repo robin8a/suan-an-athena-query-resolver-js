@@ -1,0 +1,38 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: kamay
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: suan-an-athena-query-resolver-js-app
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: suan-an-athena-query-resolver-js
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  iamRoleStatements:
+        - Effect: "Allow"
+          Action:
+            - "s3:*"
+          Resource:
+            - arn:aws:s3:::${self:custom.bucket}
+            - arn:aws:s3:::${self:custom.bucket}/*
+
+        - Effect: "Allow"
+          Action:
+            - "glue:*"
+          Resource:
+            - "*"
+
+        - Effect: "Allow"
+          Action:
+            - "athena:*"
+          Resource:
+            - "*"
+
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
