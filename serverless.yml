@@ -12,9 +12,7 @@ provider:
         - Effect: "Allow"
           Action:
             - "s3:*"
-          Resource:
-            - arn:aws:athena:us-east-1:036134507423:workgroup/suan_workshop_datalake_robin_ranking_universities_workgroup
-            - arn:aws:athena:us-east-1:036134507423:workgroup/suan_workshop_datalake_robin_ranking_universities_workgroup/*
+          Resource: '*'
 
         - Effect: "Allow"
           Action:
