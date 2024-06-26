@@ -23,7 +23,7 @@ exports.handler = async (event) => {
   const paramsQuery = {
     WorkGroup: "suan_workshop_datalake_robin_ranking_universities_workgroup",
     QueryExecutionContext: { Database: "suan_iot_test_db" },
-    QueryString: `SELECT * FROM table LIMIT 100;`,
+    QueryString: `SELECT * FROM suan_datele_iot_test_clean_view limit 10;`,
     ResultConfiguration: {
       OutputLocation: "s3://suan-workshop-datalake-robin-deletable-us-east-1/university_ranking/csv/results/",
       EncryptionConfiguration: { EncryptionOption: "SSE_S3" },

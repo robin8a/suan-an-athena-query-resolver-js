@@ -24,6 +24,7 @@ provider:
 functions:
   hello:
     handler: handler.handler
+    timeout: 30
     events:
       - httpApi:
           path: /
