@@ -1,4 +1,9 @@
-import AWS from 'aws-sdk';
+// WARNING: THIS SOLUTION IS AN EXAMPLE ONLY AND NO SUPPORT IS PROVIDED!
+// An example Node.js Lambda function that queries Amazon Athena.
+// The example includes using NextToken in a loop to retrieve all of the query results, and the logic to extract the column names and rows from the response.
+// This script will not work unless you use values and configuration in the paramsQuery object that match your environment.
+
+const AWS = require("aws-sdk");
 const athena = new AWS.Athena();
 
 // Function to build an array of rows from the Athena query results
@@ -13,7 +18,7 @@ function processRows(queryResults, rows, cols) {
   return rows;
 }
 
-exports.hello = async (event) => {
+exports.handler = async (event) => {
   // Start Athena query
   const paramsQuery = {
     WorkGroup: "suan_workshop_datalake_robin_ranking_universities_workgroup",
