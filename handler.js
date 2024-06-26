@@ -1,10 +1,87 @@
 import AWS from 'aws-sdk';
+const athena = new AWS.Athena();
+
+// Function to build an array of rows from the Athena query results
+function processRows(queryResults, rows, cols) {
+  queryResults.ResultSet.Rows.map((result) => {
+    let row = {};
+    result.Data.map((r, i) => {
+      row[cols[i]] = r.VarCharValue;
+    });
+    rows.push(row);
+  });
+  return rows;
+}
 
 exports.hello = async (event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: "Go Serverless v4! Your function executed successfully!",
-    }),
+  // Start Athena query
+  const paramsQuery = {
+    WorkGroup: "suan_workshop_datalake_robin_ranking_universities_workgroup",
+    QueryExecutionContext: { Database: "suan_iot_test_db" },
+    QueryString: `SELECT * FROM table LIMIT 100;`,
+    ResultConfiguration: {
+      OutputLocation: "s3://suan-workshop-datalake-robin-deletable-us-east-1/university_ranking/csv/results/",
+      EncryptionConfiguration: { EncryptionOption: "SSE_S3" },
+    },
   };
+  const queryExecution = await athena.startQueryExecution(paramsQuery).promise();
+  console.log("QueryExecutionId: ", queryExecution.QueryExecutionId);
+
+  // Check if Athena query status is complete
+  // Use retry and timeout with exponential backoff to check Athena query status
+  let queryStatus = "";
+  const paramsStatus = { QueryExecutionId: queryExecution.QueryExecutionId };
+  const timeout = (ms) => new Promise((res) => setTimeout(res, ms));
+  for (let i = 1; i < 12; i++) {
+    await timeout(Math.min(30000, i * 3000));
+    queryStatus = await athena.getQueryExecution(paramsStatus).promise();
+    console.log("QueryExecutionStatus: ", queryStatus.QueryExecution.Status.State);
+    if (queryStatus.QueryExecution.Status.State === "SUCCEEDED") {
+      break;
+    }
+  }
+
+  // If Athena query completes successfully then proceed
+  if (queryStatus.QueryExecution.Status.State === "SUCCEEDED") {
+    // Get Athena query results
+    let paramsResults = {
+      QueryExecutionId: queryExecution.QueryExecutionId,
+      MaxResults: 1000,
+    };
+    let queryResults = await athena.getQueryResults(paramsResults).promise();
+
+    // Build an array of columns from the Athena query results
+    let cols = [];
+    queryResults.ResultSet.ResultSetMetadata.ColumnInfo.map((c) => {
+      cols.push(c.Name);
+    });
+
+    // Get first batch of rows
+    let rows = processRows(queryResults, [], cols);
+
+    // Get additional Athena query results if more than MaxResults
+    while (queryResults.NextToken) {
+      paramsResults = {
+        QueryExecutionId: queryExecution.QueryExecutionId,
+        MaxResults: 1000,
+        NextToken: queryResults.NextToken,
+      };
+      queryResults = await athena.getQueryResults(paramsResults).promise();
+      // Get additional batch of rows
+      rows = processRows(queryResults, rows, cols);
+    }
+
+    // Remove the first row, since it contains the column names only
+    rows.shift();
+
+    // Loop through all rows and log each row
+    for (const row of rows) {
+      console.log(row);
+    }
+
+    return rows.length;
+  } else {
+    console.log("ERROR: Query execution did not complete within an acceptable time limit");
+    return;
+  }
 };
