@@ -19,12 +19,18 @@ provider:
             - "athena:*"
           Resource:
             - "*"
+        
+        - Effect: "Allow"
+          Action:
+            - "glue:*"
+          Resource:
+            - "*"
 
 
 functions:
   hello:
     handler: handler.handler
-    timeout: 30
+    timeout: 300
     events:
       - httpApi:
           path: /
